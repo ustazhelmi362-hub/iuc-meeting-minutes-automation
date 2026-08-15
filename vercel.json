@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/minutes.js": {
+      "maxDuration": 60
+    }
+  }
+}
