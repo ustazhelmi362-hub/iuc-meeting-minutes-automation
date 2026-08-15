@@ -1,0 +1,955 @@
+<!doctype html>
+<html lang="ms">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>IUC Meeting Minutes Automation</title>
+
+  <style>
+    *{box-sizing:border-box}
+
+    body{
+      margin:0;
+      font-family:Arial,Helvetica,sans-serif;
+      background:#f5f7fb;
+      color:#172033;
+    }
+
+    .wrap{
+      max-width:960px;
+      margin:0 auto;
+      padding:28px 16px 60px;
+    }
+
+    .hero{
+      background:#173f73;
+      color:#fff;
+      border-radius:20px;
+      padding:28px;
+      margin-bottom:20px;
+      box-shadow:0 12px 35px rgba(23,63,115,.16);
+    }
+
+    .hero h1{
+      margin:0 0 8px;
+      font-size:28px;
+    }
+
+    .hero p{
+      margin:0;
+      opacity:.9;
+      line-height:1.5;
+    }
+
+    .card{
+      background:#fff;
+      border:1px solid #e4e7ec;
+      border-radius:15px;
+      padding:22px;
+      margin-bottom:17px;
+      box-shadow:0 4px 16px rgba(16,24,40,.04);
+    }
+
+    h2{
+      font-size:19px;
+      margin:0 0 17px;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:13px;
+    }
+
+    .full{
+      grid-column:1/-1;
+    }
+
+    label{
+      display:block;
+      font-size:13px;
+      font-weight:bold;
+      margin-bottom:6px;
+    }
+
+    input,
+    textarea{
+      width:100%;
+      padding:11px 12px;
+      border:1px solid #d0d5dd;
+      border-radius:9px;
+      font:inherit;
+      outline:none;
+    }
+
+    input:focus,
+    textarea:focus{
+      border-color:#84adff;
+      box-shadow:0 0 0 4px rgba(23,92,211,.08);
+    }
+
+    textarea{
+      resize:vertical;
+      min-height:95px;
+    }
+
+    #plaudOutput{
+      min-height:430px;
+    }
+
+    .hint{
+      margin-top:7px;
+      font-size:12px;
+      color:#667085;
+      line-height:1.5;
+    }
+
+    .actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:17px;
+    }
+
+    button,
+    .btn{
+      border:0;
+      border-radius:9px;
+      padding:12px 17px;
+      font-weight:bold;
+      cursor:pointer;
+      text-decoration:none;
+      display:inline-block;
+      font-size:14px;
+    }
+
+    button:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+    }
+
+    .primary{
+      background:#175cd3;
+      color:#fff;
+    }
+
+    .success{
+      background:#067647;
+      color:#fff;
+    }
+
+    .secondary{
+      background:#eef4ff;
+      color:#1849a9;
+    }
+
+    .status{
+      padding:14px;
+      border-radius:10px;
+      margin-top:15px;
+      display:none;
+      line-height:1.55;
+      word-break:break-word;
+    }
+
+    .status.show{display:block}
+    .status.ok{background:#ecfdf3;color:#067647}
+    .status.info{background:#eff8ff;color:#175cd3}
+    .status.warn{background:#fffaeb;color:#b54708}
+    .status.error{background:#fef3f2;color:#b42318}
+
+    #reviewCard{
+      display:none;
+      border:1px dashed #f79009;
+      background:#fffcf5;
+    }
+
+    .meeting-id{
+      font-family:monospace;
+      padding:7px 10px;
+      background:#fff;
+      border-radius:7px;
+      display:inline-block;
+    }
+
+    details{
+      margin-top:14px;
+    }
+
+    summary{
+      cursor:pointer;
+      font-weight:bold;
+    }
+
+    footer{
+      text-align:center;
+      font-size:12px;
+      color:#667085;
+      padding-top:12px;
+    }
+
+    @media(max-width:700px){
+      .grid{grid-template-columns:1fr}
+      .hero h1{font-size:24px}
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="wrap">
+
+  <section class="hero">
+    <h1>IUC Meeting Minutes Automation</h1>
+    <p>
+      PLAUD → Draft Google Doc → Human Review → Final PDF → Auto Email
+    </p>
+  </section>
+
+  <section class="card">
+
+    <h2>1. Maklumat Mesyuarat</h2>
+
+    <div class="grid">
+
+      <div class="full">
+        <label>Tajuk Mesyuarat *</label>
+        <input
+          id="meetingTitle"
+          placeholder="Contoh: Mesyuarat Pengurusan Registry">
+      </div>
+
+      <div>
+        <label>Tarikh *</label>
+        <input
+          id="meetingDate"
+          type="date">
+      </div>
+
+      <div>
+        <label>Jenis Mesyuarat</label>
+        <input
+          id="meetingType"
+          placeholder="Contoh: Mesyuarat Pengurusan">
+      </div>
+
+      <div>
+        <label>Masa Mula</label>
+        <input
+          id="startTime"
+          type="time">
+      </div>
+
+      <div>
+        <label>Masa Tamat</label>
+        <input
+          id="endTime"
+          type="time">
+      </div>
+
+      <div>
+        <label>Tempat</label>
+        <input
+          id="venue"
+          placeholder="Contoh: Bilik Mesyuarat C212">
+      </div>
+
+      <div>
+        <label>Tempat - Baris Kedua</label>
+        <input
+          id="venue2"
+          placeholder="Contoh: Innovative University College">
+      </div>
+
+      <div>
+        <label>Pengerusi</label>
+        <input
+          id="chairperson">
+      </div>
+
+      <div>
+        <label>Pencatat</label>
+        <input
+          id="recorder"
+          value="Mohd Helmi Bin Abd Rahman">
+      </div>
+
+      <div class="full">
+        <label>Kehadiran</label>
+
+        <textarea
+          id="attendance"
+          placeholder="Masukkan 1 nama setiap baris.&#10;Contoh:&#10;Prof. Dr. Azri Bin Usman&#10;Assoc. Prof. Hairul Bin Bujang"></textarea>
+
+        <div class="hint">
+          Format PLAUD anda tidak perlu diubah. Kehadiran diisi berasingan supaya lebih tepat.
+        </div>
+      </div>
+
+      <div>
+        <label>Email To</label>
+        <input
+          id="emailTo"
+          placeholder="nama@domain.com">
+      </div>
+
+      <div>
+        <label>Email CC</label>
+        <input
+          id="emailCc"
+          placeholder="nama@domain.com">
+      </div>
+
+    </div>
+  </section>
+
+  <section class="card">
+
+    <h2>2. Paste Hasil PLAUD</h2>
+
+    <label>PLAUD Meeting Minutes *</label>
+
+    <textarea
+      id="plaudOutput"
+      placeholder="Paste output PLAUD anda di sini..."></textarea>
+
+    <div class="hint">
+      Sistem membaca format sedia ada:
+      PERUTUSAN PENGERUSI → AGENDA 1 → 1.1 → Catatan Minit → Keputusan → Status.
+    </div>
+
+    <div class="actions">
+      <button
+        id="generateBtn"
+        class="primary"
+        onclick="generateDraft()">
+        Generate Draft Minutes
+      </button>
+    </div>
+
+    <div
+      id="generateStatus"
+      class="status">
+    </div>
+
+  </section>
+
+  <section
+    id="reviewCard"
+    class="card">
+
+    <h2>3. Check & Confirm</h2>
+
+    <p>
+      Draft sudah dijana.
+      Buka Google Doc dan buat semakan / pembetulan dahulu.
+      <strong>
+        PDF dan email belum dihantar.
+      </strong>
+    </p>
+
+    <div class="actions">
+
+      <a
+        id="draftLink"
+        class="btn secondary"
+        target="_blank"
+        rel="noopener">
+        Open Draft Google Doc
+      </a>
+
+    </div>
+
+    <p>
+      Meeting ID:
+      <span
+        id="meetingIdText"
+        class="meeting-id">
+      </span>
+    </p>
+
+    <div class="grid">
+
+      <div>
+        <label>
+          Checked / Confirmed By *
+        </label>
+
+        <input
+          id="reviewedBy"
+          value="Mohd Helmi Bin Abd Rahman">
+      </div>
+
+      <div>
+        <label>Review Remarks</label>
+
+        <input
+          id="reviewRemarks"
+          placeholder="Optional">
+      </div>
+
+    </div>
+
+    <div class="actions">
+
+      <button
+        id="finalBtn"
+        class="success"
+        onclick="finalizeMeeting()">
+        Confirm & Finalise
+      </button>
+
+    </div>
+
+    <div
+      id="finalStatus"
+      class="status">
+    </div>
+
+  </section>
+
+  <section class="card">
+
+    <details>
+
+      <summary>
+        Resume / Check Meeting ID
+      </summary>
+
+      <div
+        class="grid"
+        style="margin-top:14px">
+
+        <div>
+          <label>Meeting ID</label>
+
+          <input
+            id="resumeMeetingId"
+            placeholder="IUC-MM-2026-0001">
+        </div>
+
+        <div
+          style="display:flex;align-items:flex-end">
+
+          <button
+            class="secondary"
+            onclick="checkStatus()">
+            Check Status
+          </button>
+
+        </div>
+
+      </div>
+
+      <div
+        id="resumeStatus"
+        class="status">
+      </div>
+
+    </details>
+
+  </section>
+
+  <footer>
+    Innovative University College (IUC)
+  </footer>
+
+</div>
+
+<script>
+
+  const state = {
+    meetingId:
+      localStorage.getItem(
+        'iuc_meeting_id'
+      ) || '',
+
+    draftUrl:
+      localStorage.getItem(
+        'iuc_draft_url'
+      ) || ''
+  };
+
+  function el(id){
+    return document.getElementById(id);
+  }
+
+  function value(id){
+    return el(id).value.trim();
+  }
+
+  function showStatus(
+    id,
+    type,
+    html
+  ){
+    const node = el(id);
+
+    node.className =
+      'status show ' + type;
+
+    node.innerHTML = html;
+  }
+
+  function escapeHtml(text){
+    return String(text || '')
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;')
+      .replace(/'/g,'&#039;');
+  }
+
+  async function api(
+    action,
+    payload = {}
+  ){
+    const response =
+      await fetch(
+        '/api/minutes',
+        {
+          method:'POST',
+          headers:{
+            'Content-Type':
+              'application/json'
+          },
+          body:JSON.stringify({
+            action,
+            ...payload
+          })
+        }
+      );
+
+    let data;
+
+    try{
+      data =
+        await response.json();
+
+    }catch(_){
+      throw new Error(
+        'Server memulangkan respons yang tidak sah.'
+      );
+    }
+
+    if(
+      !response.ok ||
+      !data.ok
+    ){
+      throw new Error(
+        data.error ||
+        'Request gagal.'
+      );
+    }
+
+    return data;
+  }
+
+  function collectForm(){
+    return {
+      meetingTitle:
+        value('meetingTitle'),
+
+      meetingDate:
+        value('meetingDate'),
+
+      meetingType:
+        value('meetingType'),
+
+      startTime:
+        value('startTime'),
+
+      endTime:
+        value('endTime'),
+
+      venue:
+        value('venue'),
+
+      venue2:
+        value('venue2'),
+
+      chairperson:
+        value('chairperson'),
+
+      recorder:
+        value('recorder'),
+
+      preparedBy:
+        'Mohd Helmi Bin Abd Rahman',
+
+      attendance:
+        value('attendance'),
+
+      emailTo:
+        value('emailTo'),
+
+      emailCc:
+        value('emailCc'),
+
+      plaudOutput:
+        value('plaudOutput')
+    };
+  }
+
+  async function generateDraft(){
+
+    const form =
+      collectForm();
+
+    if(
+      !form.meetingTitle ||
+      !form.meetingDate ||
+      !form.plaudOutput
+    ){
+      showStatus(
+        'generateStatus',
+        'error',
+        'Sila lengkapkan Tajuk Mesyuarat, Tarikh dan hasil PLAUD.'
+      );
+
+      return;
+    }
+
+    const btn =
+      el('generateBtn');
+
+    btn.disabled = true;
+    btn.textContent =
+      'Generating...';
+
+    showStatus(
+      'generateStatus',
+      'info',
+      'Sedang membaca hasil PLAUD dan menyediakan Draft Google Doc...'
+    );
+
+    try{
+
+      const result =
+        await api(
+          'generateDraft',
+          form
+        );
+
+      state.meetingId =
+        result.meetingId;
+
+      state.draftUrl =
+        result.draftUrl;
+
+      localStorage.setItem(
+        'iuc_meeting_id',
+        state.meetingId
+      );
+
+      localStorage.setItem(
+        'iuc_draft_url',
+        state.draftUrl
+      );
+
+      renderReview();
+
+      showStatus(
+        'generateStatus',
+        'ok',
+        '<strong>Draft berjaya dijana.</strong><br>' +
+        'Sistem membaca ' +
+        escapeHtml(result.parsedItems) +
+        ' perkara minit.'
+      );
+
+      el('reviewCard')
+        .scrollIntoView({
+          behavior:'smooth',
+          block:'start'
+        });
+
+    }catch(err){
+
+      showStatus(
+        'generateStatus',
+        'error',
+        '<strong>Gagal:</strong> ' +
+        escapeHtml(err.message)
+      );
+
+    }finally{
+
+      btn.disabled = false;
+      btn.textContent =
+        'Generate Draft Minutes';
+    }
+  }
+
+  function renderReview(){
+
+    if(
+      !state.meetingId ||
+      !state.draftUrl
+    ){
+      return;
+    }
+
+    el('meetingIdText')
+      .textContent =
+        state.meetingId;
+
+    el('draftLink')
+      .href =
+        state.draftUrl;
+
+    el('reviewCard')
+      .style.display =
+        'block';
+  }
+
+  async function finalizeMeeting(){
+
+    if(!state.meetingId){
+
+      showStatus(
+        'finalStatus',
+        'error',
+        'Meeting ID tidak ditemui.'
+      );
+
+      return;
+    }
+
+    const reviewer =
+      value('reviewedBy');
+
+    if(!reviewer){
+
+      showStatus(
+        'finalStatus',
+        'error',
+        'Masukkan nama reviewer dahulu.'
+      );
+
+      return;
+    }
+
+    const confirmed =
+      window.confirm(
+        'Anda sudah check dan edit Draft Google Doc?\n\n' +
+        'Selepas Confirm, sistem akan generate Final PDF dan menghantar email.'
+      );
+
+    if(!confirmed){
+      return;
+    }
+
+    const btn =
+      el('finalBtn');
+
+    btn.disabled = true;
+    btn.textContent =
+      'Finalising...';
+
+    showStatus(
+      'finalStatus',
+      'warn',
+      'Sedang finalise dokumen, generate PDF dan menghantar email...'
+    );
+
+    try{
+
+      const result =
+        await api(
+          'finalize',
+          {
+            meetingId:
+              state.meetingId,
+
+            reviewedBy:
+              reviewer,
+
+            reviewRemarks:
+              value('reviewRemarks')
+          }
+        );
+
+      let html =
+        '<strong>COMPLETED.</strong><br><br>';
+
+      if(result.finalDocUrl){
+
+        html +=
+          '<a target="_blank" rel="noopener" href="' +
+          result.finalDocUrl +
+          '">Final Google Doc</a>';
+      }
+
+      if(result.finalPdfUrl){
+
+        html +=
+          ' &nbsp;|&nbsp; ' +
+          '<a target="_blank" rel="noopener" href="' +
+          result.finalPdfUrl +
+          '">Final PDF</a>';
+      }
+
+      html +=
+        '<br><br>Email Status: <strong>' +
+        escapeHtml(
+          result.emailStatus || ''
+        ) +
+        '</strong>';
+
+      showStatus(
+        'finalStatus',
+        'ok',
+        html
+      );
+
+      localStorage.removeItem(
+        'iuc_meeting_id'
+      );
+
+      localStorage.removeItem(
+        'iuc_draft_url'
+      );
+
+    }catch(err){
+
+      showStatus(
+        'finalStatus',
+        'error',
+        '<strong>Gagal:</strong> ' +
+        escapeHtml(err.message)
+      );
+
+    }finally{
+
+      btn.disabled = false;
+
+      btn.textContent =
+        'Confirm & Finalise';
+    }
+  }
+
+  async function checkStatus(){
+
+    const meetingId =
+      value('resumeMeetingId');
+
+    if(!meetingId){
+
+      showStatus(
+        'resumeStatus',
+        'error',
+        'Masukkan Meeting ID dahulu.'
+      );
+
+      return;
+    }
+
+    showStatus(
+      'resumeStatus',
+      'info',
+      'Checking...'
+    );
+
+    try{
+
+      const result =
+        await api(
+          'getStatus',
+          {meetingId}
+        );
+
+      let html =
+        '<strong>' +
+        escapeHtml(
+          result.meetingId
+        ) +
+        '</strong><br>' +
+
+        escapeHtml(
+          result.meetingTitle || ''
+        ) +
+        '<br><br>' +
+
+        'Processing: <strong>' +
+        escapeHtml(
+          result.processingStatus || ''
+        ) +
+        '</strong><br>' +
+
+        'Review: <strong>' +
+        escapeHtml(
+          result.reviewStatus || ''
+        ) +
+        '</strong><br>' +
+
+        'Email: <strong>' +
+        escapeHtml(
+          result.emailStatus || ''
+        ) +
+        '</strong>';
+
+      if(result.draftUrl){
+
+        html +=
+          '<br><br><a target="_blank" rel="noopener" href="' +
+          result.draftUrl +
+          '">Open Google Doc</a>';
+      }
+
+      if(result.finalPdfUrl){
+
+        html +=
+          ' &nbsp;|&nbsp; ' +
+          '<a target="_blank" rel="noopener" href="' +
+          result.finalPdfUrl +
+          '">Open Final PDF</a>';
+      }
+
+      showStatus(
+        'resumeStatus',
+        'ok',
+        html
+      );
+
+      if(
+        result.draftUrl &&
+        result.processingStatus !==
+          'COMPLETED'
+      ){
+        state.meetingId =
+          result.meetingId;
+
+        state.draftUrl =
+          result.draftUrl;
+
+        localStorage.setItem(
+          'iuc_meeting_id',
+          state.meetingId
+        );
+
+        localStorage.setItem(
+          'iuc_draft_url',
+          state.draftUrl
+        );
+
+        renderReview();
+      }
+
+    }catch(err){
+
+      showStatus(
+        'resumeStatus',
+        'error',
+        '<strong>Gagal:</strong> ' +
+        escapeHtml(err.message)
+      );
+    }
+  }
+
+  renderReview();
+
+</script>
+
+</body>
+</html>
